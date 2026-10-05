@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة الألعاب التفاعلية - تصميم موقع ويب | الصف العاشر</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Cairo -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Three.js for 3D graphics -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Tone.js for synthesized audio effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <!-- Canvas Confetti for rewards -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        * {
+            font-family: 'Cairo', sans-serif;
+            user-select: none;
+        }
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%);
+            min-height: 100vh;
+            color: #f8fafc;
+            overflow-x: hidden;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass-card:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 15px 30px rgba(236, 72, 153, 0.25);
+            background: rgba(255, 255, 255, 0.18);
+        }
+        .neon-border {
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.5), inset 0 0 15px rgba(168, 85, 247, 0.3);
+        }
+        .btn-vibrant {
+            background: linear-gradient(90deg, #ec4899 0%, #8b5cf6 50%, #3b82f6 100%);
+            box-shadow: 0 4px 15px rgba(236, 72, 153, 0.4);
+            transition: all 0.3s ease;
+        }
+        .btn-vibrant:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.6);
+        }
+        .tag-badge {
+            background: linear-gradient(135deg, #06b6d4, #3b82f6);
+            border: 2px solid #67e8f9;
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.4);
+        }
+        .draggable-item {
+            cursor: grab;
+            touch-action: none;
+        }
+        .draggable-item:active {
+            cursor: grabbing;
+        }
+        .drop-zone {
+            transition: all 0.3s ease;
+        }
+        .drop-zone.drag-over {
+            background: rgba(59, 130, 246, 0.3);
+            border-color: #60a5fa;
+            transform: scale(1.02);
+        }
+        #three-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            pointer-events: none;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #8b5cf6;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="relative flex flex-col min-h-screen">
+    <canvas id="three-bg"></canvas>
+
+    <!-- Header & Teacher Attribution -->
+    <header class="p-4 md:p-6 w-full max-w-7xl mx-auto">
+        <div class="glass-panel rounded-3xl p-4 md:p-6 flex flex-col md:flex-row items-center justify-between gap-4 border-b border-pink-500/30">
+            <div class="flex items-center gap-4">
+                <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-purple-500/30 text-2xl text-white font-bold">
+                    <i class="fa-solid fa-code"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-pink-400 via-purple-300 to-cyan-300">
+                        مغامرات لغة HTML وتصميم المواقع
+                    </h1>
+                    <p class="text-xs md:text-sm text-cyan-200 mt-1">
+                        الدرس الثاني: تصميم موقع ويب | مادة تقنية المعلومات - الصف العاشر
+                    </p>
+                </div>
+            </div>
+
+            <!-- School & Teacher Info Badge -->
+            <div class="glass-card px-5 py-3 rounded-2xl border border-cyan-400/30 flex items-center gap-3 text-right">
+                <div class="w-10 h-10 rounded-full bg-pink-500/20 border border-pink-400 flex items-center justify-center text-pink-300">
+                    <i class="fa-solid fa-chalkboard-user text-lg"></i>
+                </div>
+                <div>
+                    <div class="text-xs text-purple-200">إعداد المعلمة: <span class="font-bold text-white text-sm">أ. ابتسام الرواس</span></div>
+                    <div class="text-xs text-cyan-300">مدرسة خولة بنت حكيم للبنات (9-12)</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 w-full max-w-7xl mx-auto p-4 md:p-6">
+        
+        <!-- Main Menu / Hub Screen -->
+        <div id="hub-screen" class="space-y-8 transition-all duration-500">
+            <!-- Welcome Hero -->
+            <div class="glass-panel p-8 rounded-3xl text-center space-y-4 border border-purple-500/30 relative overflow-hidden">
+                <!-- Audio Toggle & Player Name & Class -->
+                <div class="flex flex-wrap items-center justify-center gap-4 pt-4">
+                    <div class="flex items-center gap-2 bg-slate-900/60 px-4 py-2 rounded-xl border border-slate-700">
+                        <i class="fa-solid fa-user-astronaut text-pink-400"></i>
+                        <input type="text" id="player-name-input" placeholder="كتابة اسم الطالبة" class="bg-transparent text-sm text-white focus:outline-none w-44 text-center" value="كتابة اسم الطالبة">
+                    </div>
+                    <div class="flex items-center gap-2 bg-slate-900/60 px-4 py-2 rounded-xl border border-slate-700">
+                        <i class="fa-solid fa-users text-cyan-400"></i>
+                        <select id="player-class-select" class="bg-transparent text-sm text-white focus:outline-none cursor-pointer">
+                            <option value="عاشر / 1" class="bg-slate-900 text-white">عاشر / 1</option>
+                            <option value="عاشر / 2" class="bg-slate-900 text-white">عاشر / 2</option>
+                            <option value="عاشر / 3" class="bg-slate-900 text-white">عاشر / 3</option>
+                            <option value="عاشر / 4" class="bg-slate-900 text-white">عاشر / 4</option>
+                            <option value="عاشر / 5" class="bg-slate-900 text-white">عاشر / 5</option>
+                            <option value="عاشر / 6" class="bg-slate-900 text-white">عاشر / 6</option>
+                        </select>
+                    </div>
+                    <button id="sound-toggle-btn" onclick="toggleSound()" class="px-4 py-2 rounded-xl bg-slate-800 border border-purple-500/40 text-xs font-bold text-slate-200 hover:bg-purple-900/40 flex items-center gap-2 transition">
+                        <i id="sound-icon" class="fa-solid fa-volume-high text-cyan-400"></i>
+                        <span id="sound-text">الصوت مفعل</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Games Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                <!-- Game Card 1 -->
+                <div onclick="openGame('drag-drop')" class="glass-card p-6 rounded-3xl cursor-pointer group relative overflow-hidden border border-cyan-500/30 flex flex-col justify-between">
+                    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-400 to-blue-500"></div>
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="w-14 h-14 rounded-2xl bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-300 text-2xl group-hover:scale-110 transition">
+                            <i class="fa-solid fa-hand-pointer"></i>
+                        </div>
+                        <span class="px-3 py-1 bg-cyan-950/60 text-cyan-300 text-xs rounded-full border border-cyan-500/30 font-bold">لعبة 1</span>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition mb-2">سحب وإفلات الأوسمة</h3>
+                        <p class="text-xs text-slate-300 leading-relaxed">
+                            طابقي وسام HTML المناسب مع وظيفته الصحيحة وتصنيفه الهيكلي.
+                        </p>
+                    </div>
+                    <div class="mt-6 flex items-center justify-between text-xs font-bold text-cyan-400">
+                        <span>ابدأي التحدي</span>
+                        <i class="fa-solid fa-arrow-left group-hover:-translate-x-2 transition"></i>
+                    </div>
+                </div>
+
+                <!-- Game Card 2 -->
+                <div onclick="openGame('find-tag')" class="glass-card p-6 rounded-3xl cursor-pointer group relative overflow-hidden border border-pink-500/30 flex flex-col justify-between">
+                    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-pink-500 to-rose-500"></div>
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="w-14 h-14 rounded-2xl bg-pink-500/20 border border-pink-400/40 flex items-center justify-center text-pink-300 text-2xl group-hover:scale-110 transition">
+                            <i class="fa-solid fa-bullseye"></i>
+                        </div>
+                        <span class="px-3 py-1 bg-pink-950/60 text-pink-300 text-xs rounded-full border border-pink-500/30 font-bold">لعبة 2</span>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-white group-hover:text-pink-300 transition mb-2">اعثر على الوسام الصحيح</h3>
+                        <p class="text-xs text-slate-300 leading-relaxed">
+                            اختبري سرعتكِ ودقتكِ في اقتناص الوسام المناسب للوظائف والمهمات المطلوبة.
+                        </p>
+                    </div>
+                    <div class="mt-6 flex items-center justify-between text-xs font-bold text-pink-400">
+                        <span>ابدأي التحدي</span>
+                        <i class="fa-solid fa-arrow-left group-hover:-translate-x-2 transition"></i>
+                    </div>
+                </div>
+
+                <!-- Game Card 3 -->
+                <div onclick="openGame('order-activity')" class="glass-card p-6 rounded-3xl cursor-pointer group relative overflow-hidden border border-purple-500/30 flex flex-col justify-between">
+                    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 to-indigo-500"></div>
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="w-14 h-14 rounded-2xl bg-purple-500/20 border border-purple-400/40 flex items-center justify-center text-purple-300 text-2xl group-hover:scale-110 transition">
+                            <i class="fa-solid fa-list-ol"></i>
+                        </div>
+                        <span class="px-3 py-1 bg-purple-950/60 text-purple-300 text-xs rounded-full border border-purple-500/30 font-bold">لعبة 3</span>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-white group-hover:text-purple-300 transition mb-2">نشاط رتب المنطقي</h3>
+                        <p class="text-xs text-slate-300 leading-relaxed">
+                            رتبي الهيكل الأساسي لصفحة HTML ومراحل تصميم موقع الويب بالتسلسل الصحيح.
+                        </p>
+                    </div>
+                    <div class="mt-6 flex items-center justify-between text-xs font-bold text-purple-400">
+                        <span>ابدأي التحدي</span>
+                        <i class="fa-solid fa-arrow-left group-hover:-translate-x-2 transition"></i>
+                    </div>
+                </div>
+
+                <!-- Game Card 4 -->
+                <div onclick="openGame('treasure-hunt')" class="glass-card p-6 rounded-3xl cursor-pointer group relative overflow-hidden border border-amber-500/30 flex flex-col justify-between">
+                    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-400 to-yellow-500"></div>
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-300 text-2xl group-hover:scale-110 transition">
+                            <i class="fa-solid fa-gem"></i>
+                        </div>
+                        <span class="px-3 py-1 bg-amber-950/60 text-amber-300 text-xs rounded-full border border-amber-500/30 font-bold">لعبة 4</span>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-white group-hover:text-amber-300 transition mb-2">رحلة البحث عن الكنز 3D</h3>
+                        <p class="text-xs text-slate-300 leading-relaxed">
+                            استكشفي جزيرة الكنوز الرقمية وافتحي الصناديق الذهبية بحل الألغاز لتجميع مجوهرات المعرفة!
+                        </p>
+                    </div>
+                    <div class="mt-6 flex items-center justify-between text-xs font-bold text-amber-400">
+                        <span>ابدأي التحدي</span>
+                        <i class="fa-solid fa-arrow-left group-hover:-translate-x-2 transition"></i>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Total Score & Certificate Button -->
+            <div class="glass-panel p-6 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-4 border border-emerald-500/30">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center text-xl font-bold border border-emerald-400/30">
+                        <i class="fa-solid fa-trophy"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs text-slate-300">مجموع النقاط والإنجاز العام:</div>
+                        <div id="total-score-display" class="text-2xl font-black text-emerald-400">0 / 400 نقطة</div>
+                    </div>
+                </div>
+                <button onclick="showCertificate()" class="btn-vibrant text-white font-bold px-6 py-3 rounded-2xl flex items-center gap-2 text-sm shadow-lg">
+                    <i class="fa-solid fa-award text-lg"></i> عرض شهادة الإنجاز
+                </button>
+            </div>
+        </div>
+
+        <!-- GAME 1: DRAG & DROP TAGS -->
+        <div id="game-drag-drop" class="hidden space-y-6">
+            <!-- Game Header Bar -->
+            <div class="glass-panel p-4 rounded-2xl flex items-center justify-between">
+                <button onclick="backToHub()" class="px-4 py-2 rounded-xl bg-slate-800/80 text-xs text-slate-200 hover:bg-slate-700 transition flex items-center gap-2">
+                    <i class="fa-solid fa-arrow-right"></i> القائمة الرئيسية
+                </button>
+                <div class="text-center">
+                    <h2 class="text-xl font-bold text-cyan-300">نشاط سحب وإفلات الأوسمة</h2>
+                    <p class="text-xs text-slate-400">اسحبي كل وسام HTML وضعي في الخلية التي تناسب وظيفته</p>
+                </div>
+                <div class="bg-cyan-950/60 px-4 py-2 rounded-xl border border-cyan-500/30 text-cyan-300 font-bold text-sm">
+                    النقاط: <span id="drag-score">0</span> / 100
+                </div>
+            </div>
+
+            <!-- Game Content Area -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Tags Palette (Source) -->
+                <div class="glass-panel p-5 rounded-3xl border border-cyan-500/30 space-y-4">
+                    <h3 class="text-sm font-bold text-cyan-300 border-b border-cyan-500/30 pb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-cubes"></i> قائمة الأوسمة المتاحة:
+                    </h3>
+                    <div id="tags-palette" class="flex flex-wrap lg:flex-col gap-3 min-h-[250px]">
+                        <!-- Dynamic Draggable Tags -->
+                    </div>
+                </div>
+
+                <!-- Drop Targets Container -->
+                <div class="lg:col-span-2 glass-panel p-5 rounded-3xl border border-purple-500/30 space-y-4">
+                    <h3 class="text-sm font-bold text-purple-300 border-b border-purple-500/30 pb-2 flex items-center justify-between">
+                        <span><i class="fa-solid fa-bullseye"></i> الوظائف والتأثيرات المطلوبة:</span>
+                        <button onclick="resetDragGame()" class="text-xs text-slate-400 hover:text-white transition"><i class="fa-solid fa-rotate-right"></i> إعادة المحاولة</button>
+                    </h3>
+                    <div id="drop-targets" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Dynamic Drop Zones -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- GAME 2: FIND THE CORRECT TAG -->
+        <div id="game-find-tag" class="hidden space-y-6">
+            <div class="glass-panel p-4 rounded-2xl flex items-center justify-between">
+                <button onclick="backToHub()" class="px-4 py-2 rounded-xl bg-slate-800/80 text-xs text-slate-200 hover:bg-slate-700 transition flex items-center gap-2">
+                    <i class="fa-solid fa-arrow-right"></i> القائمة الرئيسية
+                </button>
+                <div class="text-center">
+                    <h2 class="text-xl font-bold text-pink-300">اعثر على الوسام الصحيح</h2>
+                    <p class="text-xs text-slate-400">السؤال <span id="find-q-index">1</span> من <span id="find-q-total">5</span></p>
+                </div>
+                <div class="bg-pink-950/60 px-4 py-2 rounded-xl border border-pink-500/30 text-pink-300 font-bold text-sm">
+                    النقاط: <span id="find-score">0</span> / 100
+                </div>
+            </div>
+
+            <!-- Quiz Question Box -->
+            <div class="glass-panel p-8 rounded-3xl text-center space-y-6 border border-pink-500/30">
+                <div class="inline-block px-4 py-1 rounded-full bg-pink-500/20 text-pink-300 text-xs font-bold">
+                    <i class="fa-solid fa-question-circle"></i> المهمة المطلوبة
+                </div>
+                <h3 id="find-question-text" class="text-2xl md:text-3xl font-bold text-white max-w-3xl mx-auto leading-relaxed">
+                    جاري تحميل السؤال...
+                </h3>
+
+                <!-- Options Grid (Vibrant Orbs / Cards) -->
+                <div id="find-options-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 max-w-2xl mx-auto">
+                    <!-- Dynamic Options Buttons -->
+                </div>
+            </div>
+        </div>
+
+        <!-- GAME 3: ORDERING ACTIVITY -->
+        <div id="game-order-activity" class="hidden space-y-6">
+            <div class="glass-panel p-4 rounded-2xl flex items-center justify-between">
+                <button onclick="backToHub()" class="px-4 py-2 rounded-xl bg-slate-800/80 text-xs text-slate-200 hover:bg-slate-700 transition flex items-center gap-2">
+                    <i class="fa-solid fa-arrow-right"></i> القائمة الرئيسية
+                </button>
+                <div class="text-center">
+                    <h2 class="text-xl font-bold text-purple-300">نشاط رتب المنطقي</h2>
+                    <p class="text-xs text-slate-400">رتبي العناصر في التسلسل الصحيح من الأعلى إلى الأسفل</p>
+                </div>
+                <div class="bg-purple-950/60 px-4 py-2 rounded-xl border border-purple-500/30 text-purple-300 font-bold text-sm">
+                    النقاط: <span id="order-score">0</span> / 100
+                </div>
+            </div>
+
+            <!-- Tabs to Switch Ordering Challenges -->
+            <div class="flex justify-center gap-4">
+                <button id="order-tab-1" onclick="switchOrderTab(1)" class="px-5 py-2.5 rounded-2xl bg-purple-600 text-white font-bold text-xs transition border border-purple-400">
+                    <i class="fa-solid fa-code"></i> ترتيب هيكل صفحة HTML
+                </button>
+                <button id="order-tab-2" onclick="switchOrderTab(2)" class="px-5 py-2.5 rounded-2xl bg-slate-800/80 text-slate-300 font-bold text-xs transition border border-slate-700">
+                    <i class="fa-solid fa-sitemap"></i> ترتيب مراحل تصميم الموقع
+                </button>
+            </div>
+
+            <!-- Order List Card -->
+            <div class="glass-panel p-6 rounded-3xl border border-purple-500/30 max-w-3xl mx-auto space-y-6">
+                <div id="order-instruction" class="text-center text-sm font-bold text-purple-200 bg-purple-900/30 p-3 rounded-xl border border-purple-500/20">
+                    اسحبي أو انقري لترتيب الهيكل الأساسي لكود HTML بالترتيب التسلسلي الصحيح:
+                </div>
+
+                <div id="order-items-list" class="space-y-3">
+                    <!-- Dynamic Reorderable Cards -->
+                </div>
+
+                <div class="flex items-center justify-center gap-4 pt-4">
+                    <button onclick="checkOrderAnswer()" class="btn-vibrant text-white font-bold px-8 py-3 rounded-2xl text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-check"></i> التحقق من الترتيب
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- GAME 4: 3D TREASURE HUNT -->
+        <div id="game-treasure-hunt" class="hidden space-y-6">
+            <div class="glass-panel p-4 rounded-2xl flex items-center justify-between">
+                <button onclick="backToHub()" class="px-4 py-2 rounded-xl bg-slate-800/80 text-xs text-slate-200 hover:bg-slate-700 transition flex items-center gap-2">
+                    <i class="fa-solid fa-arrow-right"></i> القائمة الرئيسية
+                </button>
+                <div class="text-center">
+                    <h2 class="text-xl font-bold text-amber-300">مغامرة ابحث عن الكنز الرقمي</h2>
+                    <p class="text-xs text-slate-400">انقري على صناديق الكنوز على الخريطة لاكتشاف أسئلة الدرس وافتحِ الكنز!</p>
+                </div>
+                <div class="bg-amber-950/60 px-4 py-2 rounded-xl border border-amber-500/30 text-amber-300 font-bold text-sm">
+                    الكنوز المفتوحة: <span id="chests-opened-count">0</span> / 4
+                </div>
+            </div>
+
+            <!-- Treasure Map Grid & Canvas Container -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Map Chest Selector Grid -->
+                <div class="glass-panel p-5 rounded-3xl border border-amber-500/30 space-y-4">
+                    <h3 class="text-sm font-bold text-amber-300 border-b border-amber-500/30 pb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-map-location-dot"></i> خارطة الكنوز:
+                    </h3>
+                    <div class="grid grid-cols-2 gap-4" id="treasure-chests-buttons">
+                        <!-- Chest Buttons -->
+                    </div>
+                </div>
+
+                <!-- Chest Challenge Modal/Card -->
+                <div class="lg:col-span-2 glass-panel p-6 rounded-3xl border border-amber-500/30 flex flex-col justify-between min-h-[350px]">
+                    <div id="chest-quiz-content" class="space-y-6">
+                        <div class="flex items-center gap-3 text-amber-400">
+                            <i class="fa-solid fa-lock text-2xl" id="chest-lock-icon"></i>
+                            <h3 class="text-xl font-bold text-white" id="chest-quiz-title">اختر صندقاً من الخارطة لبدء التحدي!</h3>
+                        </div>
+                        <p id="chest-quiz-desc" class="text-slate-300 text-sm leading-relaxed">
+                            تنتظركِ أسرار HTML داخل هذه الصناديق. انقري على أحد الصناديق المغلقة على الخارطة لبدء المغامرة!
+                        </p>
+                        <div id="chest-options-container" class="space-y-3 hidden">
+                            <!-- Dynamic Chest Quiz Options -->
+                        </div>
+                    </div>
+
+                    <div id="chest-status-footer" class="mt-4 pt-4 border-t border-slate-700/60 text-xs text-slate-400 flex items-center justify-between">
+                        <span>حالة المغامرة: جار الاستكشاف...</span>
+                        <span id="treasure-score-badge" class="text-amber-300 font-bold">نقاط الكنز: 0 / 100</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Custom Modal Dialog (Feedback / Certificate) -->
+    <div id="custom-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-panel p-8 rounded-3xl max-w-lg w-full text-center space-y-6 border border-purple-500/40 relative animate-bounce-in">
+            <div id="modal-icon-container" class="w-16 h-16 rounded-full bg-purple-500/20 border border-purple-400 mx-auto flex items-center justify-center text-3xl text-purple-300">
+                <i id="modal-icon" class="fa-solid fa-award"></i>
+            </div>
+            <h3 id="modal-title" class="text-2xl font-bold text-white">عنوان التنبيه</h3>
+            <p id="modal-body" class="text-sm text-slate-300 leading-relaxed">نص التنبيه أو الرسالة القادمة...</p>
+            <button onclick="closeModal()" class="btn-vibrant text-white font-bold px-8 py-3 rounded-2xl text-sm w-full">
+                موافق / إغلاق
+            </button>
+        </div>
+    </div>
+
+    <!-- Certificate Overlay Screen (Printable) -->
+    <div id="certificate-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 hidden overflow-y-auto p-4 flex items-center justify-center">
+        <div class="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 border-4 border-amber-400 p-8 rounded-3xl max-w-3xl w-full text-center space-y-6 shadow-2xl relative my-8">
+            <button onclick="closeCertificate()" class="absolute top-4 left-4 text-slate-400 hover:text-white text-xl">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <!-- Certificate Header -->
+            <div class="border-b-2 border-amber-400/40 pb-6 space-y-2">
+                <div class="flex items-center justify-center gap-3 text-amber-400 text-3xl font-black">
+                    <i class="fa-solid fa-award"></i>
+                    <span>شهادة إنجاز متميزة</span>
+                    <i class="fa-solid fa-award"></i>
+                </div>
+                <p class="text-xs text-cyan-300">مادة تقنية المعلومات - الدرس الثاني: تصميم موقع ويب</p>
+            </div>
+
+            <!-- Certificate Body -->
+            <div class="space-y-4 py-4">
+                <p class="text-slate-300 text-sm">تشهد المعلمة وإدارة المادة بأن الطالبة المبدعة:</p>
+                <h2 id="cert-student-name" class="text-3xl font-black bg-clip-text text-transparent bg-gradient-to-r from-pink-400 via-purple-300 to-amber-300">
+                    طالبة متميزة
+                </h2>
+                <p class="text-slate-300 text-sm leading-relaxed max-w-xl mx-auto">
+                    قد أتمت بنجاح واقتدار كافة الألعاب التعليمية التفاعلية 3D الخاصة بدرس تصميم موقع ويب وحصلت على الدرجة المستحقة بكل تفوق.
+                </p>
+
+                <!-- Final Score Badge -->
+                <div class="inline-block bg-amber-500/20 border border-amber-400 px-6 py-2 rounded-2xl">
+                    <span class="text-xs text-amber-200 block">النتيجة النهائية:</span>
+                    <span id="cert-final-score" class="text-2xl font-black text-amber-300">0 / 400 نقطة</span>
+                </div>
+            </div>
+
+            <!-- Certificate Signatures -->
+            <div class="grid grid-cols-2 gap-6 border-t-2 border-amber-400/40 pt-6 text-xs text-slate-300">
+                <div>
+                    <div class="font-bold text-white text-sm">أ. ابتسام الرواس</div>
+                    <div class="text-purple-300">معلمة تقنية المعلومات</div>
+                </div>
+                <div>
+                    <div class="font-bold text-white text-sm">مدرسة خولة بنت حكيم للبنات (9-12)</div>
+                    <div class="text-cyan-300">سلطنة عمان</div>
+                </div>
+            </div>
+
+            <!-- Print Actions -->
+            <div class="flex justify-center gap-4 pt-4">
+                <button onclick="window.print()" class="btn-vibrant text-white font-bold px-6 py-2.5 rounded-xl text-xs flex items-center gap-2">
+                    <i class="fa-solid fa-print"></i> طباعة الشهادة
+                </button>
+                <button onclick="closeCertificate()" class="bg-slate-800 text-slate-300 px-6 py-2.5 rounded-xl text-xs font-bold hover:bg-slate-700">
+                    إغلاق
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* Global Sound Controller using Tone.js Synthesizer */
+        let soundEnabled = true;
+        let synth, polySynth;
+
+        function escapeHTML(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function initAudio() {
+            try {
+                synth = new Tone.Synth().toDestination();
+                polySynth = new Tone.PolySynth().toDestination();
+            } catch(e) {
+                console.log('Audio init postponed until user interaction');
+            }
+        }
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            try {
+                if (Tone.context.state !== 'running') {
+                    Tone.start();
+                }
+                if (!synth) initAudio();
+
+                if (type === 'correct') {
+                    polySynth.triggerAttackRelease(["C5", "E5", "G5"], "8n");
+                } else if (type === 'wrong') {
+                    synth.triggerAttackRelease("A2", "8n");
+                } else if (type === 'click') {
+                    synth.triggerAttackRelease("C4", "16n");
+                } else if (type === 'win') {
+                    polySynth.triggerAttackRelease(["C4", "E4", "G4", "C5"], "4n");
+                }
+            } catch(e) {
+                // Ignore fallback
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const soundIcon = document.getElementById('sound-icon');
+            const soundText = document.getElementById('sound-text');
+            if (soundEnabled) {
+                soundIcon.className = "fa-solid fa-volume-high text-cyan-400";
+                soundText.innerText = "الصوت مفعل";
+                playSound('click');
+            } else {
+                soundIcon.className = "fa-solid fa-volume-xmark text-rose-400";
+                soundText.innerText = "الصوت مكتوم";
+            }
+        }
+
+        function init3DBackground() {
+            const canvas = document.getElementById('three-bg');
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            // Create floating geometrical shapes representing code particles
+            const geometryGroup = new THREE.Group();
+            scene.add(geometryGroup);
+
+            const geometries = [
+                new THREE.IcosahedronGeometry(0.8, 0),
+                new THREE.TorusGeometry(0.6, 0.2, 16, 50),
+                new THREE.OctahedronGeometry(0.7)
+            ];
+
+            const materials = [
+                new THREE.MeshBasicMaterial({ color: 0xec4899, wireframe: true }),
+                new THREE.MeshBasicMaterial({ color: 0x8b5cf6, wireframe: true }),
+                new THREE.MeshBasicMaterial({ color: 0x06b6d4, wireframe: true }),
+                new THREE.MeshBasicMaterial({ color: 0xf59e0b, wireframe: true })
+            ];
+
+            const items = [];
+            for (let i = 0; i < 25; i++) {
+                const geom = geometries[Math.floor(Math.random() * geometries.length)];
+                const mat = materials[Math.floor(Math.random() * materials.length)];
+                const mesh = new THREE.Mesh(geom, mat);
+
+                mesh.position.x = (Math.random() - 0.5) * 30;
+                mesh.position.y = (Math.random() - 0.5) * 30;
+                mesh.position.z = (Math.random() - 0.5) * 30;
+
+                mesh.rotation.x = Math.random() * Math.PI;
+                mesh.rotation.y = Math.random() * Math.PI;
+
+                const speed = {
+                    x: (Math.random() - 0.5) * 0.01,
+                    y: (Math.random() - 0.5) * 0.01,
+                    rotX: (Math.random() - 0.5) * 0.02,
+                    rotY: (Math.random() - 0.5) * 0.02
+                };
+
+                geometryGroup.add(mesh);
+                items.push({ mesh, speed });
+            }
+
+            camera.position.z = 15;
+
+            // Mouse interactivity
+            let mouseX = 0, mouseY = 0;
+            window.addEventListener('mousemove', (e) => {
+                mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+                mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
+            });
+
+            function animate() {
+                requestAnimationFrame(animate);
+
+                items.forEach(item => {
+                    item.mesh.rotation.x += item.speed.rotX;
+                    item.mesh.rotation.y += item.speed.rotY;
+                    item.mesh.position.x += item.speed.x;
+                    item.mesh.position.y += item.speed.y;
+
+                    // Wrap around screen bounds
+                    if (Math.abs(item.mesh.position.x) > 18) item.speed.x *= -1;
+                    if (Math.abs(item.mesh.position.y) > 18) item.speed.y *= -1;
+                });
+
+                camera.position.x += (mouseX * 2 - camera.position.x) * 0.05;
+                camera.position.y += (-mouseY * 2 - camera.position.y) * 0.05;
+                camera.lookAt(scene.position);
+
+                renderer.render(scene, camera);
+            }
+
+            animate();
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        }
+
+        let scores = {
+            dragDrop: 0,
+            findTag: 0,
+            orderActivity: 0,
+            treasureHunt: 0
+        };
+
+        function updateScoreDisplay() {
+            const total = scores.dragDrop + scores.findTag + scores.orderActivity + scores.treasureHunt;
+            document.getElementById('total-score-display').innerText = `${total} / 400 نقطة`;
+            document.getElementById('drag-score').innerText = scores.dragDrop;
+            document.getElementById('find-score').innerText = scores.findTag;
+            document.getElementById('order-score').innerText = scores.orderActivity;
+            document.getElementById('treasure-score-badge').innerText = `نقاط الكنز: ${scores.treasureHunt} / 100`;
+        }
+
+        function openGame(gameKey) {
+            playSound('click');
+            document.getElementById('hub-screen').classList.add('hidden');
+            document.getElementById('game-drag-drop').classList.add('hidden');
+            document.getElementById('game-find-tag').classList.add('hidden');
+            document.getElementById('game-order-activity').classList.add('hidden');
+            document.getElementById('game-treasure-hunt').classList.add('hidden');
+
+            document.getElementById(`game-${gameKey}`).classList.remove('hidden');
+
+            // Initialize or Refresh Game Specific Logic
+            if (gameKey === 'drag-drop') initDragGame();
+            if (gameKey === 'find-tag') initFindTagGame();
+            if (gameKey === 'order-activity') initOrderGame();
+            if (gameKey === 'treasure-hunt') initTreasureGame();
+        }
+
+        function backToHub() {
+            playSound('click');
+            document.getElementById('game-drag-drop').classList.add('hidden');
+            document.getElementById('game-find-tag').classList.add('hidden');
+            document.getElementById('game-order-activity').classList.add('hidden');
+            document.getElementById('game-treasure-hunt').classList.add('hidden');
+            document.getElementById('hub-screen').classList.remove('hidden');
+            updateScoreDisplay();
+        }
+
+        function showModal(title, body, icon = 'fa-award') {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-body').innerText = body;
+            document.getElementById('modal-icon').className = `fa-solid ${icon}`;
+            document.getElementById('custom-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            playSound('click');
+            document.getElementById('custom-modal').classList.add('hidden');
+        }
+
+        const dragData = [
+            { id: 't1', tag: '<h1>', targetId: 'zone-h1', desc: 'عنوان رئيسي بأكبر حجم خط' },
+            { id: 't2', tag: '<p>', targetId: 'zone-p', desc: 'إدراج فقرة نصية عادية' },
+            { id: 't3', tag: '<img>', targetId: 'zone-img', desc: 'إدراج صورة في صفحة الويب' },
+            { id: 't4', tag: '<a>', targetId: 'zone-a', desc: 'إنشاء رابط تشعبي (Hyperlink)' },
+            { id: 't5', tag: '<b>', targetId: 'zone-b', desc: 'جعل النص عريضاً (Bold)' },
+            { id: 't6', tag: '<i>', targetId: 'zone-i', desc: 'جعل النص مائلاً (Italic)' }
+        ];
+
+        function initDragGame() {
+            const palette = document.getElementById('tags-palette');
+            const targetsContainer = document.getElementById('drop-targets');
+            palette.innerHTML = '';
+            targetsContainer.innerHTML = '';
+
+            // Shuffle tags
+            const shuffledTags = [...dragData].sort(() => Math.random() - 0.5);
+
+            shuffledTags.forEach(item => {
+                const tagEl = document.createElement('div');
+                tagEl.id = item.id;
+                tagEl.draggable = true;
+                tagEl.className = "tag-badge px-4 py-2.5 rounded-xl text-white font-mono font-bold text-center draggable-item cursor-grab shadow-md transition hover:scale-105 flex items-center justify-center gap-2";
+                tagEl.innerHTML = `<i class="fa-solid fa-code text-cyan-200 text-xs"></i> <span dir="ltr">${escapeHTML(item.tag)}</span>`;
+                
+                tagEl.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', item.id);
+                    playSound('click');
+                });
+                palette.appendChild(tagEl);
+            });
+
+            dragData.forEach(item => {
+                const zone = document.createElement('div');
+                zone.id = item.targetId;
+                zone.dataset.expectedId = item.id;
+                zone.className = "drop-zone glass-card p-4 rounded-2xl border-2 border-dashed border-slate-600 flex flex-col justify-between items-center text-center space-y-2 min-h-[110px]";
+                zone.innerHTML = `
+                    <span class="text-xs text-slate-300 font-semibold">${item.desc}</span>
+                    <div class="zone-slot w-full py-2 bg-slate-900/50 rounded-xl border border-slate-700 text-xs text-slate-500 font-mono">
+                        اسحبي الوسام هنا
+                    </div>
+                `;
+
+                zone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    zone.classList.add('drag-over');
+                });
+
+                zone.addEventListener('dragleave', () => {
+                    zone.classList.remove('drag-over');
+                });
+
+                zone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    zone.classList.remove('drag-over');
+                    const draggedId = e.dataTransfer.getData('text/plain');
+                    if (draggedId === item.id) {
+                        playSound('correct');
+                        const draggedEl = document.getElementById(draggedId);
+                        zone.querySelector('.zone-slot').replaceWith(draggedEl);
+                        draggedEl.className = "px-4 py-2 bg-emerald-500/20 border border-emerald-400 text-emerald-300 font-mono font-bold rounded-xl text-center w-full";
+                        checkDragCompletion();
+                    } else {
+                        playSound('wrong');
+                    }
+                });
+
+                targetsContainer.appendChild(zone);
+            });
+        }
+
+        function checkDragCompletion() {
+            const palette = document.getElementById('tags-palette');
+            if (palette.children.length === 0) {
+                scores.dragDrop = 100;
+                updateScoreDisplay();
+                playSound('win');
+                confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
+                showModal('أحسنتِ إنجاز رائع!', 'لقد قمتِ بمطابقة جميع أوسمة HTML بوظائفها الصحيحة بنجاح 100%!', 'fa-trophy');
+            }
+        }
+
+        function resetDragGame() {
+            initDragGame();
+        }
+
+        const findQuestions = [
+            {
+                q: "ما هو الوسام المسؤول عن تحديد العنوان الرئيسي الأكبر حجماً في صفحة الويب؟",
+                options: ["<h1>", "<title>", "<head>", "<header>"],
+                correct: "<h1>"
+            },
+            {
+                q: "أريد إضافة صورة إلى موقعي مع نص بديل، أي الأوسمة التالية هو الصحيح؟",
+                options: ["<picture>", "<img src='...' alt='...'>", "<image>", "<link>"],
+                correct: "<img src='...' alt='...'>"
+            },
+            {
+                q: "ما الوسام الذي يستخدم لإنشاء رابط تشعبي ينقل المستخدم إلى صفحة أخرى؟",
+                options: ["<link>", "<url>", "<a href='...'>", "<goto>"],
+                correct: "<a href='...'>"
+            },
+            {
+                q: "لإضافة سطر جديد (انتقال للسطر التالي) داخل النص دون إنشاء فقرة جديدة، نستخدم الوسام:",
+                options: ["<br>", "<hr>", "<p>", "<next>"],
+                correct: "<br>"
+            },
+            {
+                q: "أي من الأوسمة التالية يُستخدم لتظليل النص باللون الأصفر للتأكيد عليه؟",
+                options: ["<b>", "<u>", "<mark>", "<i>"],
+                correct: "<mark>"
+            }
+        ];
+
+        let currentFindIdx = 0;
+
+        function initFindTagGame() {
+            currentFindIdx = 0;
+            renderFindQuestion();
+        }
+
+        function renderFindQuestion() {
+            const q = findQuestions[currentFindIdx];
+            document.getElementById('find-q-index').innerText = currentFindIdx + 1;
+            document.getElementById('find-q-total').innerText = findQuestions.length;
+            document.getElementById('find-question-text').innerText = q.q;
+
+            const grid = document.getElementById('find-options-grid');
+            grid.innerHTML = '';
+
+            q.options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "glass-card p-4 rounded-2xl border border-pink-500/40 font-mono text-lg font-bold text-pink-200 hover:bg-pink-600/30 transition flex items-center justify-center gap-2";
+                btn.innerHTML = `<i class="fa-solid fa-terminal text-xs text-pink-400"></i> <span dir="ltr">${escapeHTML(opt)}</span>`;
+                btn.onclick = () => selectFindOption(opt, q.correct);
+                grid.appendChild(btn);
+            });
+        }
+
+        function selectFindOption(selected, correct) {
+            if (selected === correct) {
+                playSound('correct');
+                scores.findTag += 20;
+                updateScoreDisplay();
+                currentFindIdx++;
+
+                if (currentFindIdx < findQuestions.length) {
+                    renderFindQuestion();
+                } else {
+                    playSound('win');
+                    confetti({ particleCount: 100, spread: 80, origin: { y: 0.6 } });
+                    showModal('ممتازة جداً!', `أكملتِ جميع أسئلة 'اعثر على الوسام الصحيح' بحرفية واقتدار! مجموع النقاط: ${scores.findTag}`, 'fa-star');
+                }
+            } else {
+                playSound('wrong');
+                showModal('إجابة خاطئة', 'حاولي مرة أخرى وركزي في اختيار الوسام المناسب الوظيفي.', 'fa-xmark');
+            }
+        }
+
+        let currentOrderTab = 1;
+
+        const orderStructures = {
+            1: [
+                { id: 'o1', text: '<!DOCTYPE html>', desc: 'الإعلان عن نوع المستند' },
+                { id: 'o2', text: '<html>', desc: 'بداية مستند HTML' },
+                { id: 'o3', text: '<head>', desc: 'رأس الصفحة (المعلومات المتاحة للطع)' },
+                { id: 'o4', text: '<title>عنوان الصفحة</title>', desc: 'عنوان الموقع في شريط المتصفح' },
+                { id: 'o5', text: '<body>', desc: 'جسم الصفحة (المحتوى الظاهر للمستخدم)' },
+                { id: 'o6', text: '</body>', desc: 'إغلاق جسم الصفحة' },
+                { id: 'o7', text: '</html>', desc: 'إغلاق مستند HTML' }
+            ],
+            2: [
+                { id: 'p1', text: '1. التخطيط وإعداد المحتوى', desc: 'تحديد الهدف وجمع النصوص والوسائط' },
+                { id: 'p2', text: '2. التخطيط الهيكلي والتصميم', desc: 'رسم ورقي لصفحات الموقع وتوزيع العناصر' },
+                { id: 'p3', text: '3. التنفيذ والبرمجة', desc: 'كتابة أوسمة HTML وتنسيق الموقع' },
+                { id: 'p4', text: '4. الاختبار والمعاينة', desc: 'تجربة الموقع على متصفحات مختلفة' },
+                { id: 'p5', text: '5. النشر والاستضافة', desc: 'رفع ملفات الموقع على شبكة الإنترنت' }
+            ]
+        };
+
+        let currentOrderList = [];
+
+        function initOrderGame() {
+            switchOrderTab(currentOrderTab);
+        }
+
+        function switchOrderTab(tabNum) {
+            currentOrderTab = tabNum;
+            const btn1 = document.getElementById('order-tab-1');
+            const btn2 = document.getElementById('order-tab-2');
+
+            if (tabNum === 1) {
+                btn1.className = "px-5 py-2.5 rounded-2xl bg-purple-600 text-white font-bold text-xs transition border border-purple-400";
+                btn2.className = "px-5 py-2.5 rounded-2xl bg-slate-800/80 text-slate-300 font-bold text-xs transition border border-slate-700";
+                document.getElementById('order-instruction').innerText = "اسحبي أو أعيدي ترتيب الهيكل الأساسي لكود HTML بالترتيب التسلسلي الصحيح من الأعلى للأسفل:";
+            } else {
+                btn2.className = "px-5 py-2.5 rounded-2xl bg-purple-600 text-white font-bold text-xs transition border border-purple-400";
+                btn1.className = "px-5 py-2.5 rounded-2xl bg-slate-800/80 text-slate-300 font-bold text-xs transition border border-slate-700";
+                document.getElementById('order-instruction').innerText = "رتب مراحل تصميم موقع الويب بالتسلسل الزمني الصحيح من البداية إلى النشر:";
+            }
+
+            // Shuffle list for gameplay
+            currentOrderList = [...orderStructures[tabNum]].sort(() => Math.random() - 0.5);
+            renderOrderItems();
+        }
+
+        function renderOrderItems() {
+            const container = document.getElementById('order-items-list');
+            container.innerHTML = '';
+
+            currentOrderList.forEach((item, index) => {
+                const card = document.createElement('div');
+                card.className = "glass-card p-3 rounded-2xl border border-purple-500/30 flex items-center justify-between gap-3 cursor-pointer hover:border-purple-400 transition";
+                card.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <span class="w-8 h-8 rounded-xl bg-purple-900/60 text-purple-300 font-bold flex items-center justify-center text-xs border border-purple-500/30">
+                            ${index + 1}
+                        </span>
+                        <div>
+                            <div class="font-mono font-bold text-purple-200 text-sm" dir="ltr">${escapeHTML(item.text)}</div>
+                            <div class="text-xs text-slate-400">${item.desc}</div>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <button onclick="moveOrderItem(${index}, -1)" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-purple-600 text-slate-300 text-xs flex items-center justify-center">
+                            <i class="fa-solid fa-chevron-up"></i>
+                        </button>
+                        <button onclick="moveOrderItem(${index}, 1)" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-purple-600 text-slate-300 text-xs flex items-center justify-center">
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function moveOrderItem(index, direction) {
+            playSound('click');
+            const targetIndex = index + direction;
+            if (targetIndex < 0 || targetIndex >= currentOrderList.length) return;
+
+            const temp = currentOrderList[index];
+            currentOrderList[index] = currentOrderList[targetIndex];
+            currentOrderList[targetIndex] = temp;
+
+            renderOrderItems();
+        }
+
+        function checkOrderAnswer() {
+            const correctOriginal = orderStructures[currentOrderTab];
+            let isCorrect = true;
+
+            for (let i = 0; i < correctOriginal.length; i++) {
+                if (currentOrderList[i].id !== correctOriginal[i].id) {
+                    isCorrect = false;
+                    break;
+                }
+            }
+
+            if (isCorrect) {
+                playSound('win');
+                scores.orderActivity = 100;
+                updateScoreDisplay();
+                confetti({ particleCount: 90, spread: 70, origin: { y: 0.6 } });
+                showModal('ترتيب صحيح 100%!', 'ممتازة جداً! قمتِ بترتيب العناصر بالشكل الصحيح والمنطقي.', 'fa-circle-check');
+            } else {
+                playSound('wrong');
+                showModal('الترتيب غير دقيق', 'يرجى مراجعة تسلسل الأوسمة والمراحل والترتيب من جديد.', 'fa-triangle-exclamation');
+            }
+        }
+
+        const treasureData = [
+            {
+                id: 1,
+                title: "صندوق أوسمة التنسيق",
+                question: "أي مما يلي يُستخدم لتنسيق نص ليصبح مسطراً (تحته خط) في صفحة HTML؟",
+                options: ["<b>", "<u>", "<i>", "<mark>"],
+                correct: "<u>",
+                opened: false
+            },
+            {
+                id: 2,
+                title: "صندوق هيكل الجدول",
+                question: "لإنشاء صف جديد داخل جدول HTML نستخدم الوسام:",
+                options: ["<table>", "<td>", "<tr>", "<th>"],
+                correct: "<tr>",
+                opened: false
+            },
+            {
+                id: 3,
+                title: "صندوق القوائم المرتبة",
+                question: "لإنشاء قائمة مرتبة بأرقام (1, 2, 3) نستخدم الوسام الرئيسي:",
+                options: ["<ol>", "<ul>", "<li>", "<dl>"],
+                correct: "<ol>",
+                opened: false
+            },
+            {
+                id: 4,
+                title: "صندوق خصائص الوسائط",
+                question: "الخاصية التي تستخدم لتحديد مسار أو مصدر ملف الصورة في وسام <img> هي:",
+                options: ["href", "src", "alt", "link"],
+                correct: "src",
+                opened: false
+            }
+        ];
+
+        let activeChestId = null;
+
+        function initTreasureGame() {
+            renderTreasureChests();
+        }
+
+        function renderTreasureChests() {
+            const container = document.getElementById('treasure-chests-buttons');
+            container.innerHTML = '';
+
+            treasureData.forEach(chest => {
+                const btn = document.createElement('button');
+                btn.className = `p-4 rounded-2xl border transition flex flex-col items-center justify-center gap-2 text-center ${
+                    chest.opened 
+                    ? 'bg-amber-500/20 border-amber-400 text-amber-300' 
+                    : 'glass-card border-amber-500/30 text-slate-300 hover:bg-amber-900/30'
+                }`;
+
+                btn.onclick = () => selectChest(chest.id);
+
+                btn.innerHTML = `
+                    <i class="fa-solid ${chest.opened ? 'fa-box-open text-3xl text-amber-300' : 'fa-box text-3xl text-amber-500'}"></i>
+                    <span class="text-xs font-bold">${chest.title}</span>
+                    <span class="text-[10px] ${chest.opened ? 'text-emerald-400' : 'text-amber-400'}">
+                        ${chest.opened ? 'مفتوح (تم الكشف)' : 'مغلق'}
+                    </span>
+                `;
+                container.appendChild(btn);
+            });
+
+            // Update open count
+            const openedCount = treasureData.filter(c => c.opened).length;
+            document.getElementById('chests-opened-count').innerText = openedCount;
+        }
+
+        function selectChest(id) {
+            playSound('click');
+            activeChestId = id;
+            const chest = treasureData.find(c => c.id === id);
+
+            document.getElementById('chest-quiz-title').innerText = chest.title;
+            document.getElementById('chest-quiz-desc').innerText = chest.question;
+            document.getElementById('chest-lock-icon').className = chest.opened ? "fa-solid fa-lock-open text-2xl text-emerald-400" : "fa-solid fa-lock text-2xl text-amber-400";
+
+            const optionsContainer = document.getElementById('chest-options-container');
+            optionsContainer.classList.remove('hidden');
+            optionsContainer.innerHTML = '';
+
+            chest.options.forEach(opt => {
+                const optBtn = document.createElement('button');
+                optBtn.className = "w-full p-3 rounded-xl bg-slate-900/80 hover:bg-amber-600/30 border border-amber-500/30 font-mono text-sm text-amber-200 text-right transition flex items-center justify-between";
+                optBtn.innerHTML = `<span dir="ltr">${escapeHTML(opt)}</span> <i class="fa-solid fa-gem text-amber-400 text-xs"></i>`;
+                
+                if (chest.opened) {
+                    optBtn.disabled = true;
+                    optBtn.classList.add('opacity-50');
+                } else {
+                    optBtn.onclick = () => answerChestQuiz(opt, chest);
+                }
+
+                optionsContainer.appendChild(optBtn);
+            });
+        }
+
+        function answerChestQuiz(selected, chest) {
+            if (selected === chest.correct) {
+                playSound('win');
+                chest.opened = true;
+                scores.treasureHunt += 25;
+                updateScoreDisplay();
+                renderTreasureChests();
+                confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
+                showModal('فتح الصندوق بنجاح!', 'يا لكِ من مستكشفة بارعة! حصلتِ على مجوهرات الكنز الرقمية كاملة لهذا الصندوق!', 'fa-gem');
+                selectChest(chest.id);
+            } else {
+                playSound('wrong');
+                showModal('الرمز الخاطئ', 'المفتاح غير صحيح! راجعي أوسمة HTML وحاولي فتح الصندوق مجدداً.', 'fa-key');
+            }
+        }
+
+        function showCertificate() {
+            playSound('click');
+            const rawName = document.getElementById('player-name-input').value.trim();
+            const nameInput = (rawName && rawName !== "كتابة اسم الطالبة") ? rawName : "طالبة متميزة";
+            const classInput = document.getElementById('player-class-select').value;
+            const total = scores.dragDrop + scores.findTag + scores.orderActivity + scores.treasureHunt;
+
+            document.getElementById('cert-student-name').innerText = `${nameInput} - (${classInput})`;
+            document.getElementById('cert-final-score').innerText = `${total} / 400 نقطة`;
+            document.getElementById('certificate-modal').classList.remove('hidden');
+        }
+
+        function closeCertificate() {
+            playSound('click');
+            document.getElementById('certificate-modal').classList.add('hidden');
+        }
+
+        window.onload = function() {
+            init3DBackground();
+            initAudio();
+            updateScoreDisplay();
+        };
+    </script>
+</body>
+</html>
